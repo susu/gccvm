@@ -34,6 +34,8 @@ function usage()
   echo "  Commands:"
   echo "    list          - lists possible gcc versions"
   echo "    select <name> - selects gcc version"
+  ec $YELLOW "Current gcc version:"
+  g++ --version | head -n1
 }
 
 function index_of()
@@ -42,8 +44,6 @@ function index_of()
   let count--
   for i in `seq 0 ${count}`
   do
-    # echo $i
-    # echo ${names[$i]}
     [ "${names[$i]}" == "$1" ] && index=$i
   done
 }
