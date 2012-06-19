@@ -1,0 +1,93 @@
+#!/bin/bash
+
+. ~/bin/colordefs.sh
+
+names=('latest'
+       '4.3')
+
+bin_postfixes=(''
+               '-4.3')
+
+bin_dir='/usr/bin/'
+basenames=('c++' 'cpp' 'g++' 'gcc' 'gcov')
+
+gccvm_bin="$HOME/.gccvm/bin/"
+
+function err()
+{
+  ec $RED "$1"
+  exit 2
+}
+
+function list()
+{
+  echo "Possible versions:"
+  for i in ${names[@]}
+  do
+    ec $YELLOW "${i}"
+  done
+}
+
+function usage()
+{
+  echo "Usage: gccvm <command>"
+  echo "  Commands:"
+  echo "    list          - lists possible gcc versions"
+  echo "    select <name> - selects gcc version"
+}
+
+function index_of()
+{
+  count=${#names[@]}
+  let count--
+  for i in `seq 0 ${count}`
+  do
+    # echo $i
+    # echo ${names[$i]}
+    [ "${names[$i]}" == "$1" ] && index=$i
+  done
+}
+
+function select_gcc()
+{
+  ec $YELLOW "Selecting '${RED}$1${YELLOW}' ..."
+  index_of "$1"
+  [[ "${index}" < "0" ]] && err "Name not exists: '$1'"
+
+  ec $THIN_CYAN "Binaries to be linked:"
+  for i in ${basenames[@]}
+  do
+    bin=${bin_dir}$i${bin_postfixes[$index]}
+    echo -ne "  Checking $YELLOW$bin$NOCOLOR ... "
+    if [ ! -f "$bin" ]; then
+      err "Not exists: '$bin'!"
+    else
+      ec $GREEN "OK!"
+    fi
+  done
+
+  for i in ${basenames[@]}
+  do
+    bin=${bin_dir}$i${bin_postfixes[$index]}
+    echo -ne '  '
+    ln -sfv ${bin} ${gccvm_bin}$i
+  done
+  ec $GREEN "Switched to '$1' SUCCESS!"
+  ${gccvm_bin}g++ --version | head -n1
+  g++ --version | head -n1
+}
+
+case "$1" in
+  list)
+    list
+  ;;
+  select)
+    select_gcc $2
+  ;;
+  *)
+  usage
+esac
+
+
+
+
