@@ -11,7 +11,11 @@ bin_postfixes=(''
 bin_dir='/usr/bin/'
 basenames=('c++' 'cpp' 'g++' 'gcc' 'gcov')
 
-gccvm_bin="$HOME/.gccvm/bin/"
+gccvm_root="$HOME/.gccvm/"
+gccvm_bin="${gccvm_root}bin/"
+
+SCAN_DIRS=('/usr/bin' '/usr/local/bin' '/bin')
+LS_FILE="${gccvm_root}/.gcc.list"
 
 function err()
 {
@@ -19,12 +23,24 @@ function err()
   exit 2
 }
 
+function get_version()
+{
+  echo `$1 --version | head -n1 | cut -d' ' -f3`
+}
+
+function load()
+{
+  echo
+}
+
 function list()
 {
+  load
   echo "Possible versions:"
-  for i in ${names[@]}
+  for (( i = 0; i < ${#names[@]}; i++ ))
   do
-    ec $YELLOW "${i}"
+    echo -ne "  "
+    ec $YELLOW " ${names[$i]} ${GREEN} (`get_version ${bin_dir}g++${bin_postfixes[$i]}`)" 
   done
 }
 
@@ -34,6 +50,7 @@ function usage()
   echo "  Commands:"
   echo "    list          - lists possible gcc versions"
   echo "    select <name> - selects gcc version"
+  echo "    scan          - scans some directory for gcc binaries (warning! Overwrites existing config!)"
   ec $YELLOW "Current gcc version:"
   g++ --version | head -n1
 }
@@ -77,12 +94,36 @@ function select_gcc()
   g++ --version | head -n1
 }
 
+function scan()
+{
+  echo -ne > ${LS_FILE}
+
+  ec $YELLOW "Searching for GCC binaries in ${GREEN} ${SCAN_DIRS[*]} ${YELLOW}..."
+  for i in ${SCAN_DIRS[@]}
+  do
+    for j in `/bin/ls $i | egrep '^gcc(-[0-9\.]+)*$'`
+    do
+      bin="$i/$j"
+      if [ -f "$bin" ]; then
+        vers=`get_version $bin`
+        echo -e "${RED}FOUND${NOCOLOR} gcc in: $i, version: ${YELLOW}`get_version $bin`$NOCOLOR"
+        echo "$vers $bin" >> ${LS_FILE}
+      fi
+    done
+  done
+}
+
+# current_version=
+
 case "$1" in
   list)
     list
   ;;
   select)
     select_gcc $2
+  ;;
+  scan)
+    scan
   ;;
   *)
   usage
